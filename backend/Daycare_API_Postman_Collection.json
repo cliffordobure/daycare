@@ -1,0 +1,1219 @@
+{
+  "info": {
+    "name": "Daycare Management API",
+    "description": "Complete API testing collection for Daycare Management System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "child_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "activity_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "center_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"TestPass123!\",\n  \"phone\": \"+1234567890\",\n  \"role\": \"parent\",\n  \"dateOfBirth\": \"1990-01-01T00:00:00.000Z\",\n  \"gender\": \"male\",\n  \"address\": {\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"country\": \"USA\",\n    \"postalCode\": \"10001\"\n  },\n  \"preferredLanguage\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set(\"token\", response.data.token);",
+                  "    pm.collectionVariables.set(\"user_id\", response.data.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"TestPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set(\"token\", response.data.token);",
+                  "    pm.collectionVariables.set(\"user_id\", response.data.user.id);",
+                  "    pm.collectionVariables.set(\"center_id\", response.data.user.center);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"your_refresh_token_here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh-token",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh-token"]
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"TestPass123!\",\n  \"newPassword\": \"NewPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/change-password",
+              "host": ["{{base_url}}"],
+              "path": ["users", "change-password"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Smith\",\n  \"phone\": \"+1234567891\",\n  \"dateOfBirth\": \"1990-01-01T00:00:00.000Z\",\n  \"gender\": \"male\",\n  \"address\": {\n    \"street\": \"456 Oak Ave\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"country\": \"USA\",\n    \"postalCode\": \"10002\"\n  },\n  \"preferredLanguage\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Upload Profile Picture",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/users/profile-picture",
+              "host": ["{{base_url}}"],
+              "path": ["users", "profile-picture"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Child Management",
+      "item": [
+        {
+          "name": "Get Children (Parent)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/children",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "children"]
+            }
+          }
+        },
+        {
+          "name": "Get Children (Teacher)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teacher/children?classId=60f7b3b3b3b3b3b3b3b3b3b3&date=2023-01-01",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "children"],
+              "query": [
+                {
+                  "key": "classId",
+                  "value": "60f7b3b3b3b3b3b3b3b3b3b3"
+                },
+                {
+                  "key": "date",
+                  "value": "2023-01-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Child",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Emma\",\n  \"lastName\": \"Doe\",\n  \"dateOfBirth\": \"2019-01-01T00:00:00.000Z\",\n  \"gender\": \"female\",\n  \"parentId\": \"{{user_id}}\",\n  \"parents\": [\"{{user_id}}\"],\n  \"centerId\": \"{{center_id}}\",\n  \"emergencyContacts\": [\n    {\n      \"name\": \"Jane Doe\",\n      \"relationship\": \"Mother\",\n      \"phone\": \"+1234567890\",\n      \"email\": \"jane@example.com\",\n      \"isPrimary\": true\n    }\n  ],\n  \"health\": {\n    \"allergies\": [\n      {\n        \"allergen\": \"Peanuts\",\n        \"severity\": \"severe\",\n        \"symptoms\": [\"Swelling\", \"Difficulty breathing\"],\n        \"treatment\": \"Epinephrine\",\n        \"emergencyAction\": \"Call 911 immediately\"\n      }\n    ],\n    \"medicalConditions\": [\n      {\n        \"condition\": \"Asthma\",\n        \"diagnosis\": \"Mild asthma\",\n        \"diagnosedDate\": \"2020-01-01T00:00:00.000Z\",\n        \"treatment\": \"Inhaler as needed\",\n        \"notes\": \"Child responds well to treatment\"\n      }\n    ]\n  },\n  \"dietary\": {\n    \"restrictions\": [\"Peanuts\", \"Tree nuts\"],\n    \"preferences\": [\"Vegetables\", \"Fruits\"],\n    \"specialInstructions\": \"No nuts allowed\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/children",
+              "host": ["{{base_url}}"],
+              "path": ["children"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set(\"child_id\", response.data.child._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Child by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/children/{{child_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["children", "{{child_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Child",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Emma\",\n  \"lastName\": \"Smith\",\n  \"dateOfBirth\": \"2019-01-01T00:00:00.000Z\",\n  \"gender\": \"female\",\n  \"health\": {\n    \"allergies\": [\n      {\n        \"allergen\": \"Peanuts\",\n        \"severity\": \"severe\",\n        \"symptoms\": [\"Swelling\", \"Difficulty breathing\"],\n        \"treatment\": \"Epinephrine\",\n        \"emergencyAction\": \"Call 911 immediately\"\n      },\n      {\n        \"allergen\": \"Dairy\",\n        \"severity\": \"mild\",\n        \"symptoms\": [\"Rash\"],\n        \"treatment\": \"Antihistamine\",\n        \"emergencyAction\": \"Monitor symptoms\"\n      }\n    ]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/children/{{child_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["children", "{{child_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Upload Child Photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/children/{{child_id}}/photo",
+              "host": ["{{base_url}}"],
+              "path": ["children", "{{child_id}}", "photo"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activity Management",
+      "item": [
+        {
+          "name": "Get Activities (Parent)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/activities?childId={{child_id}}&date=2023-01-01&type=academic&status=completed",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "activities"],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}"
+                },
+                {
+                  "key": "date",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "type",
+                  "value": "academic"
+                },
+                {
+                  "key": "status",
+                  "value": "completed"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Activities (Teacher)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teacher/activities",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "activities"]
+            }
+          }
+        },
+        {
+          "name": "Create Activity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Morning Circle Time\",\n  \"description\": \"Singing songs and sharing stories\",\n  \"startTime\": \"2023-01-01T09:00:00.000Z\",\n  \"endTime\": \"2023-01-01T09:30:00.000Z\",\n  \"type\": \"academic\",\n  \"childrenInvolved\": [\"{{child_id}}\"],\n  \"location\": \"Main Classroom\",\n  \"materials\": [\"Books\", \"Musical instruments\"],\n  \"notes\": \"Special focus on sharing\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/activities",
+              "host": ["{{base_url}}"],
+              "path": ["activities"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set(\"activity_id\", response.data.activity._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Activity by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/activities/{{activity_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["activities", "{{activity_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Activity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Morning Circle Time - Updated\",\n  \"description\": \"Singing songs and sharing stories with focus on numbers\",\n  \"startTime\": \"2023-01-01T09:00:00.000Z\",\n  \"endTime\": \"2023-01-01T09:45:00.000Z\",\n  \"type\": \"academic\",\n  \"status\": \"in_progress\",\n  \"location\": \"Main Classroom\",\n  \"materials\": [\"Books\", \"Musical instruments\", \"Number cards\"],\n  \"notes\": \"Focus on counting and sharing\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/activities/{{activity_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["activities", "{{activity_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Activity Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Emma participated well in singing and counting\",\n  \"childId\": \"{{child_id}}\",\n  \"attachments\": [\"https://example.com/photo1.jpg\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/activities/{{activity_id}}/updates",
+              "host": ["{{base_url}}"],
+              "path": ["activities", "{{activity_id}}", "updates"]
+            }
+          }
+        },
+        {
+          "name": "Upload Activity Photo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "activityId",
+                  "value": "{{activity_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Emma enjoying circle time",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/activities/photos",
+              "host": ["{{base_url}}"],
+              "path": ["activities", "photos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance Management",
+      "item": [
+        {
+          "name": "Get Attendance (Parent)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/attendance?childId={{child_id}}&date=2023-01-01&startDate=2023-01-01&endDate=2023-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "attendance"],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}"
+                },
+                {
+                  "key": "date",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Attendance (Teacher)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teacher/attendance?classId=60f7b3b3b3b3b3b3b3b3b3b3&date=2023-01-01",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "attendance"],
+              "query": [
+                {
+                  "key": "classId",
+                  "value": "60f7b3b3b3b3b3b3b3b3b3b3"
+                },
+                {
+                  "key": "date",
+                  "value": "2023-01-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Record Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"childId\": \"{{child_id}}\",\n  \"classId\": \"60f7b3b3b3b3b3b3b3b3b3b3\",\n  \"date\": \"2023-01-01T00:00:00.000Z\",\n  \"status\": \"present\",\n  \"checkInTime\": \"2023-01-01T08:30:00.000Z\",\n  \"notes\": \"Child was excited to be back\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance",
+              "host": ["{{base_url}}"],
+              "path": ["attendance"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Attendance Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"60f7b3b3b3b3b3b3b3b3b3b3\",\n  \"date\": \"2023-01-01T00:00:00.000Z\",\n  \"attendance\": [\n    {\n      \"childId\": \"{{child_id}}\",\n      \"status\": \"present\",\n      \"checkInTime\": \"2023-01-01T08:30:00.000Z\",\n      \"notes\": \"On time\"\n    },\n    {\n      \"childId\": \"60f7b3b3b3b3b3b3b3b3b3b4\",\n      \"status\": \"late\",\n      \"checkInTime\": \"2023-01-01T09:15:00.000Z\",\n      \"notes\": \"Traffic delay\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Check Out Child",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkOutTime\": \"2023-01-01T15:30:00.000Z\",\n  \"notes\": \"Child had a great day\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/attendance/{{attendance_id}}/checkout",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "{{attendance_id}}", "checkout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Communication",
+      "item": [
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communication/messages?recipientId=60f7b3b3b3b3b3b3b3b3b3b5&limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["communication", "messages"],
+              "query": [
+                {
+                  "key": "recipientId",
+                  "value": "60f7b3b3b3b3b3b3b3b3b3b5"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipientId\": \"60f7b3b3b3b3b3b3b3b3b3b5\",\n  \"content\": \"Emma had a great day today! She participated well in all activities.\",\n  \"type\": \"text\",\n  \"attachments\": [\"https://example.com/photo1.jpg\"],\n  \"metadata\": {\n    \"childId\": \"{{child_id}}\",\n    \"activityId\": \"{{activity_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/communication/messages",
+              "host": ["{{base_url}}"],
+              "path": ["communication", "messages"]
+            }
+          }
+        },
+        {
+          "name": "Get Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communication/conversations",
+              "host": ["{{base_url}}"],
+              "path": ["communication", "conversations"]
+            }
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communication/notifications?type=activity&isRead=false&limit=10&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["communication", "notifications"],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "activity"
+                },
+                {
+                  "key": "isRead",
+                  "value": "false"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Activity Update\",\n  \"message\": \"Emma participated in circle time\",\n  \"type\": \"activity\",\n  \"priority\": \"medium\",\n  \"recipientId\": \"{{user_id}}\",\n  \"childId\": \"{{child_id}}\",\n  \"activityId\": \"{{activity_id}}\",\n  \"attachments\": [\"https://example.com/photo1.jpg\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/communication/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["communication", "notifications"]
+            }
+          }
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/communication/notifications/read-all",
+              "host": ["{{base_url}}"],
+              "path": ["communication", "notifications", "read-all"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Parent Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/parent/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["parent", "dashboard", "stats"]
+            }
+          }
+        },
+        {
+          "name": "Get Teacher Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/teacher/dashboard/stats",
+              "host": ["{{base_url}}"],
+              "path": ["teacher", "dashboard", "stats"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Records",
+      "item": [
+        {
+          "name": "Get Health Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/records?childId={{child_id}}&date=2023-01-01&startDate=2023-01-01&endDate=2023-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["health", "records"],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}"
+                },
+                {
+                  "key": "date",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Health Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"childId\": \"{{child_id}}\",\n  \"date\": \"2023-01-01T00:00:00.000Z\",\n  \"temperature\": {\n    \"value\": 98.6,\n    \"unit\": \"fahrenheit\"\n  },\n  \"symptoms\": [\"cough\", \"runny nose\"],\n  \"observations\": \"Child seems tired but in good spirits\",\n  \"medications\": [\n    {\n      \"name\": \"Children's Tylenol\",\n      \"dosage\": \"5ml\",\n      \"frequency\": \"Every 6 hours\",\n      \"notes\": \"Given at 10:00 AM\"\n    }\n  ],\n  \"meals\": [\n    {\n      \"mealType\": \"breakfast\",\n      \"items\": [\"Oatmeal\", \"Banana\"],\n      \"amount\": \"most\",\n      \"notes\": \"Ate well\"\n    }\n  ],\n  \"sleep\": {\n    \"napTimes\": [\n      {\n        \"startTime\": \"2023-01-01T13:00:00.000Z\",\n        \"endTime\": \"2023-01-01T14:30:00.000Z\",\n        \"duration\": 90,\n        \"quality\": \"good\",\n        \"notes\": \"Slept peacefully\"\n      }\n    ],\n    \"totalSleepTime\": 90,\n    \"sleepQuality\": \"good\"\n  },\n  \"behavior\": {\n    \"mood\": \"happy\",\n    \"energyLevel\": \"normal\",\n    \"socialInteraction\": \"active\",\n    \"notes\": \"Very social today, played well with others\"\n  },\n  \"physicalActivity\": {\n    \"outdoorTime\": 60,\n    \"indoorActivity\": [\"Blocks\", \"Drawing\", \"Story time\"],\n    \"notes\": \"Active play both indoors and outdoors\"\n  },\n  \"incidents\": [\n    {\n      \"type\": \"fall\",\n      \"description\": \"Minor fall during outdoor play\",\n      \"severity\": \"minor\",\n      \"time\": \"2023-01-01T11:00:00.000Z\",\n      \"location\": \"Playground\",\n      \"actionTaken\": \"Comforted child, checked for injuries\",\n      \"parentNotified\": true,\n      \"parentNotifiedAt\": \"2023-01-01T11:05:00.000Z\"\n    }\n  ],\n  \"notes\": \"Overall good day with minor incident handled well\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/health/records",
+              "host": ["{{base_url}}"],
+              "path": ["health", "records"]
+            }
+          }
+        },
+        {
+          "name": "Get Health Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/health/stats?startDate=2023-01-01&endDate=2023-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["health", "stats"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Payment Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments?childId={{child_id}}&status=pending&startDate=2023-01-01&endDate=2023-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["payments"],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments/stats/summary?startDate=2023-01-01&endDate=2023-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["payments", "stats", "summary"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Get Attendance Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/attendance?childId={{child_id}}&startDate=2023-01-01&endDate=2023-01-31&format=json",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "attendance"],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                },
+                {
+                  "key": "format",
+                  "value": "json"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Activity Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/activities?childId={{child_id}}&startDate=2023-01-01&endDate=2023-01-31&type=academic",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "activities"],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                },
+                {
+                  "key": "type",
+                  "value": "academic"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payment Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/reports/payments?childId={{child_id}}&startDate=2023-01-01&endDate=2023-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "payments"],
+              "query": [
+                {
+                  "key": "childId",
+                  "value": "{{child_id}}"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-01-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

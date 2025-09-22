@@ -26,6 +26,11 @@ const childSchema = new mongoose.Schema(
     },
 
     // Parent/Guardian Information
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     parents: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -54,6 +59,13 @@ const childSchema = new mongoose.Schema(
         },
       },
     ],
+
+    // Center Information
+    centerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Center",
+      required: true,
+    },
 
     // Enrollment Information
     enrollmentDate: {
@@ -236,6 +248,26 @@ const childSchema = new mongoose.Schema(
       accommodations: [String],
       supportRequired: [String],
       iepPlan: String,
+    },
+
+    // Profile Picture
+    profilePicture: {
+      type: String,
+      default: null,
+    },
+
+    // Current Status
+    isPresent: {
+      type: Boolean,
+      default: false,
+    },
+    lastActivity: {
+      type: String,
+      trim: true,
+    },
+    lastUpdate: {
+      type: Date,
+      default: Date.now,
     },
 
     // Photos and Media

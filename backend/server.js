@@ -19,6 +19,11 @@ import config from "./config/default.js";
 import "./models/User.js";
 import "./models/Center.js";
 import "./models/Child.js";
+import "./models/Activity.js";
+import "./models/Attendance.js";
+import "./models/Communication.js";
+import "./models/HealthRecord.js";
+import "./models/Payment.js";
 
 // Import routes
 import authRoutes from "./routes/auth.js";
@@ -32,6 +37,7 @@ import paymentRoutes from "./routes/payments.js";
 import communicationRoutes from "./routes/communication.js";
 import healthRoutes from "./routes/health.js";
 import reportRoutes from "./routes/reports.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -158,6 +164,7 @@ app.use("/api/payments", authenticateToken, paymentRoutes);
 app.use("/api/communication", authenticateToken, communicationRoutes);
 app.use("/api/health", authenticateToken, healthRoutes);
 app.use("/api/reports", authenticateToken, reportRoutes);
+app.use("/api/dashboard", authenticateToken, dashboardRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {

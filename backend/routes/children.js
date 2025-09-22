@@ -4,6 +4,41 @@ import Child from "../models/Child.js";
 import User from "../models/User.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { authenticateToken } from "../middleware/auth.js";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Configure multer for child photo uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../uploads/children"));
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, "child-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed"));
+    }
+  },
+});
 
 const router = express.Router();
 
@@ -73,6 +108,111 @@ const validateChildUpdate = [
     .isIn(["enrolled", "waitlisted", "withdrawn", "graduated"])
     .withMessage("Invalid enrollment status"),
 ];
+
+// @route   GET /api/parent/children
+// @desc    Get children for parent
+// @access  Private
+router.get(
+  "/parent/children",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    // Check if user is parent
+    if (req.user.role !== "parent") {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied. Parent privileges required.",
+      });
+    }
+
+    const children = await Child.find({ 
+      parentId: req.user._id,
+      isActive: true 
+    })
+      .populate("parentId", "firstName lastName email phone")
+      .populate("currentClass", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      status: "success",
+      message: "Children retrieved successfully",
+      data: children.map(child => ({
+        _id: child._id,
+        firstName: child.firstName,
+        lastName: child.lastName,
+        age: child.age,
+        parentId: child.parentId,
+        centerId: child.centerId,
+        profilePicture: child.profilePicture,
+        isPresent: child.isPresent,
+        lastActivity: child.lastActivity,
+        lastUpdate: child.lastUpdate,
+        dateOfBirth: child.dateOfBirth,
+        gender: child.gender,
+        allergies: child.health?.allergies?.map(a => a.allergen).join(", ") || "",
+        medicalNotes: child.health?.medicalConditions?.map(m => m.condition).join(", ") || "",
+        emergencyContact: child.emergencyContacts?.find(ec => ec.isPrimary) || child.emergencyContacts?.[0] || {},
+        createdAt: child.createdAt,
+        updatedAt: child.updatedAt,
+      })),
+    });
+  })
+);
+
+// @route   GET /api/teacher/children
+// @desc    Get children for teacher
+// @access  Private
+router.get(
+  "/teacher/children",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    // Check if user is teacher
+    if (req.user.role !== "teacher") {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied. Teacher privileges required.",
+      });
+    }
+
+    const { classId, date } = req.query;
+    let query = { 
+      centerId: req.user.center,
+      isActive: true 
+    };
+
+    if (classId) {
+      query.currentClass = classId;
+    }
+
+    const children = await Child.find(query)
+      .populate("parentId", "firstName lastName email phone")
+      .populate("currentClass", "name")
+      .sort({ firstName: 1 });
+
+    res.json({
+      status: "success",
+      message: "Children retrieved successfully",
+      data: children.map(child => ({
+        _id: child._id,
+        firstName: child.firstName,
+        lastName: child.lastName,
+        age: child.age,
+        parentId: child.parentId,
+        centerId: child.centerId,
+        profilePicture: child.profilePicture,
+        isPresent: child.isPresent,
+        lastActivity: child.lastActivity,
+        lastUpdate: child.lastUpdate,
+        dateOfBirth: child.dateOfBirth,
+        gender: child.gender,
+        allergies: child.health?.allergies?.map(a => a.allergen).join(", ") || "",
+        medicalNotes: child.health?.medicalConditions?.map(m => m.condition).join(", ") || "",
+        emergencyContact: child.emergencyContacts?.find(ec => ec.isPrimary) || child.emergencyContacts?.[0] || {},
+        createdAt: child.createdAt,
+        updatedAt: child.updatedAt,
+      })),
+    });
+  })
+);
 
 // @route   GET /api/children
 // @desc    Get all children with filtering and pagination
@@ -270,6 +410,8 @@ router.post(
     // Create new child
     const child = new Child({
       ...cleanData,
+      parentId: parents[0], // Set parentId to first parent
+      centerId: req.user.center, // Set centerId from user's center
       createdBy: req.user._id,
       updatedBy: req.user._id,
     });
@@ -464,6 +606,68 @@ router.get(
         withdrawnChildren,
         graduatedChildren,
         childrenWithAllergies,
+      },
+    });
+  })
+);
+
+// @route   POST /api/children/:childId/photo
+// @desc    Upload child photo
+// @access  Private
+router.post(
+  "/:childId/photo",
+  authenticateToken,
+  upload.single("image"),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({
+        status: "error",
+        message: "No image file provided",
+      });
+    }
+
+    const child = await Child.findById(req.params.childId);
+    if (!child) {
+      return res.status(404).json({
+        status: "error",
+        message: "Child not found",
+      });
+    }
+
+    // Check if user has access to this child
+    if (req.user.role === "parent" && child.parentId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied to this child",
+      });
+    }
+
+    if (req.user.role === "teacher" && child.centerId.toString() !== req.user.center.toString()) {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied to this child",
+      });
+    }
+
+    // Update child profile picture
+    const updatedChild = await Child.findByIdAndUpdate(
+      req.params.childId,
+      {
+        profilePicture: `/uploads/children/${req.file.filename}`,
+        updatedBy: req.user._id,
+      },
+      { new: true }
+    );
+
+    res.json({
+      status: "success",
+      message: "Child photo uploaded successfully",
+      data: {
+        url: `/uploads/children/${req.file.filename}`,
+        child: {
+          id: updatedChild._id,
+          profilePicture: updatedChild.profilePicture,
+        },
       },
     });
   })

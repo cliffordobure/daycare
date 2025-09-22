@@ -188,16 +188,25 @@ router.post(
       status: "success",
       message: "User registered successfully",
       data: {
+        token,
+        refreshToken,
         user: {
           id: user._id,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
+          phone: user.phone,
           role: user.role,
+          profilePicture: user.profilePicture,
+          dateOfBirth: user.dateOfBirth,
+          gender: user.gender,
+          address: user.address,
           preferredLanguage: user.preferredLanguage,
+          isActive: user.isActive,
+          center: user.center,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
         },
-        token,
-        refreshToken,
       },
     });
   })
@@ -279,18 +288,25 @@ router.post(
         status: "success",
         message: "Login successful",
         data: {
+          token,
+          refreshToken,
           user: {
             id: user._id,
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
+            phone: user.phone,
             role: user.role,
-            preferredLanguage: user.preferredLanguage,
             profilePicture: user.profilePicture,
-            center: user.center, // Include center information
+            dateOfBirth: user.dateOfBirth,
+            gender: user.gender,
+            address: user.address,
+            preferredLanguage: user.preferredLanguage,
+            isActive: user.isActive,
+            center: user.center,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
           },
-          token,
-          refreshToken,
         },
       };
 

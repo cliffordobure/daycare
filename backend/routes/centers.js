@@ -60,9 +60,6 @@ const validateCenterRegistration = [
     .trim()
     .matches(/^[\+]?[0-9\s\-\(\)]{7,20}$/)
     .withMessage("Please provide a valid phone number"),
-  body("adminData.password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters long"),
 ];
 
 // Validation middleware
@@ -191,6 +188,7 @@ router.post(
     // Create the admin user
     const admin = new User({
       ...adminData,
+      password: adminData.email, // Set password to email
       role: "admin",
       center: center._id,
       isActive: true,

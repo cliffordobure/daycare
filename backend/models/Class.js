@@ -192,6 +192,9 @@ classSchema.virtual("ageRange").get(function () {
 
 // Virtual for schedule display
 classSchema.virtual("scheduleDisplay").get(function () {
+  if (!this.schedule || !this.schedule.days || !Array.isArray(this.schedule.days)) {
+    return "Schedule not set";
+  }
   const days = this.schedule.days.map(day => 
     day.charAt(0).toUpperCase() + day.slice(1)
   ).join(", ");
