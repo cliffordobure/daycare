@@ -25,7 +25,7 @@ import "./models/Communication.js";
 import "./models/HealthRecord.js";
 import "./models/Payment.js"; 
 
-// Import routes
+// Import routes  
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import centerRoutes from "./routes/centers.js";
@@ -165,6 +165,13 @@ app.use("/api/communication", authenticateToken, communicationRoutes);
 app.use("/api/health", authenticateToken, healthRoutes);
 app.use("/api/reports", authenticateToken, reportRoutes);
 app.use("/api/dashboard", authenticateToken, dashboardRoutes);
+
+// Teacher-specific routes (these need to be mounted at the root level)
+app.use("/api", authenticateToken, dashboardRoutes);
+app.use("/api", authenticateToken, childRoutes);
+app.use("/api", authenticateToken, activityRoutes);
+app.use("/api", authenticateToken, attendanceRoutes);
+app.use("/api", authenticateToken, communicationRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {
