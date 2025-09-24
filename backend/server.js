@@ -23,7 +23,7 @@ import "./models/Activity.js";
 import "./models/Attendance.js";
 import "./models/Communication.js";
 import "./models/HealthRecord.js";
-import "./models/Payment.js";
+import "./models/Payment.js"; 
 
 // Import routes
 import authRoutes from "./routes/auth.js";

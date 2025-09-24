@@ -134,34 +134,73 @@ router.get(
       });
     }
 
-    const { classId, date } = req.query;
-    
-    let query = {
+    const { date, page = 1, limit = 10 } = req.query;
+
+    // Validate required parameters
+    if (!date) {
+      return res.status(400).json({
+        status: "error",
+        message: "date is required",
+      });
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const startOfDay = new Date(date);
+    const endOfDay = new Date(date);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    const attendanceRecords = await Attendance.find({
       centerId: req.user.center,
+      date: { $gte: startOfDay, $lt: endOfDay },
       isActive: true,
-    };
-
-    if (classId) {
-      query.classId = classId;
-    }
-
-    if (date) {
-      const startOfDay = new Date(date);
-      const endOfDay = new Date(date);
-      endOfDay.setDate(endOfDay.getDate() + 1);
-      query.date = { $gte: startOfDay, $lt: endOfDay };
-    }
-
-    const attendanceRecords = await Attendance.find(query)
+    })
       .populate("child", "firstName lastName profilePicture")
       .populate("classId", "name")
-      .populate("recordedBy", "firstName lastName")
-      .sort({ date: -1, checkInTime: 1 });
+      .populate("recordedBy", "firstName lastName email role")
+      .sort({ checkInTime: 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalRecords = await Attendance.countDocuments({
+      centerId: req.user.center,
+      date: { $gte: startOfDay, $lt: endOfDay },
+      isActive: true,
+    });
+    const totalPages = Math.ceil(totalRecords / parseInt(limit));
 
     res.json({
       status: "success",
-      message: "Attendance records retrieved successfully",
-      data: attendanceRecords,
+      message: "Attendance retrieved successfully",
+      data: {
+        attendance: attendanceRecords.map(record => ({
+          _id: record._id,
+          child: {
+            _id: record.child._id,
+            firstName: record.child.firstName,
+            lastName: record.child.lastName,
+            age: record.child.age,
+            parentId: record.child.parentId,
+            centerId: record.child.centerId,
+            profilePicture: record.child.profilePicture,
+          },
+          classId: record.classId,
+          date: record.date,
+          status: record.status,
+          checkInTime: record.checkInTime,
+          checkOutTime: record.checkOutTime,
+          notes: record.notes,
+          recordedBy: record.recordedBy,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+        })),
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalRecords,
+          hasNext: parseInt(page) < totalPages,
+          hasPrev: parseInt(page) > 1,
+        },
+      },
     });
   })
 );
@@ -249,7 +288,17 @@ router.post(
       status: "success",
       message: "Attendance recorded successfully",
       data: {
-        attendanceRecord: populatedRecord,
+        _id: populatedRecord._id,
+        childId: populatedRecord.child._id,
+        classId: populatedRecord.classId,
+        date: populatedRecord.date,
+        status: populatedRecord.status,
+        checkInTime: populatedRecord.checkInTime,
+        checkOutTime: populatedRecord.checkOutTime,
+        notes: populatedRecord.notes,
+        recordedBy: populatedRecord.recordedBy._id,
+        createdAt: populatedRecord.createdAt,
+        updatedAt: populatedRecord.updatedAt,
       },
     });
   })

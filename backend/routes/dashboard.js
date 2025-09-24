@@ -222,17 +222,18 @@ router.get(
       isActive: true,
     });
 
-    // Get upcoming activities (next 7 days)
+    // Get scheduled activities (next 7 days)
     const upcomingStart = new Date(today.getTime() + 24 * 60 * 60 * 1000);
     const upcomingEnd = new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000);
-    const upcomingActivities = await Activity.find({
+    const scheduledActivities = await Activity.find({
       teacherId: req.user._id,
       startTime: { $gte: upcomingStart, $lt: upcomingEnd },
+      status: "scheduled",
       isActive: true,
     });
 
-    // Get unread notifications
-    const unreadNotifications = await Notification.countDocuments({
+    // Get unread messages/notifications
+    const unreadMessages = await Notification.countDocuments({
       recipientId: req.user._id,
       isRead: false,
       isActive: true,
@@ -240,132 +241,68 @@ router.get(
 
     // Calculate attendance rate
     const totalChildren = children.length;
-    const presentChildren = todayAttendance.filter(record => record.status === "present").length;
-    const attendanceRate = totalChildren > 0 ? presentChildren / totalChildren : 0;
+    const presentToday = todayAttendance.filter(record => record.status === "present").length;
+    const absentToday = todayAttendance.filter(record => record.status === "absent").length;
+    const attendanceRate = totalChildren > 0 ? (presentToday / totalChildren) * 100 : 0;
 
-    // Get class attendance breakdown
-    const classAttendance = await Attendance.aggregate([
-      {
-        $match: {
-          child: { $in: childIds },
-          date: { $gte: startOfToday, $lt: endOfToday },
-          isActive: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "children",
-          localField: "child",
-          foreignField: "_id",
-          as: "childData",
-        },
-      },
-      {
-        $unwind: "$childData",
-      },
-      {
-        $lookup: {
-          from: "classes",
-          localField: "classId",
-          foreignField: "_id",
-          as: "classData",
-        },
-      },
-      {
-        $unwind: "$classData",
-      },
-      {
-        $group: {
-          _id: "$classId",
-          className: { $first: "$classData.name" },
-          totalChildren: { $sum: 1 },
-          present: {
-            $sum: { $cond: [{ $eq: ["$status", "present"] }, 1, 0] },
-          },
-          absent: {
-            $sum: { $cond: [{ $eq: ["$status", "absent"] }, 1, 0] },
-          },
-        },
-      },
-      {
-        $addFields: {
-          rate: {
-            $cond: [
-              { $gt: ["$totalChildren", 0] },
-              { $divide: ["$present", "$totalChildren"] },
-              0,
-            ],
-          },
-        },
-      },
-    ]);
+    // Get weekly attendance (last 5 days)
+    const weekStart = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
+    const weeklyAttendance = await Attendance.find({
+      child: { $in: childIds },
+      date: { $gte: weekStart, $lt: endOfToday },
+      isActive: true,
+    });
 
-    // Get recent activities (last 5)
-    const recentActivities = await Activity.find({
+    // Group weekly attendance by day
+    const weeklyAttendanceByDay = [];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      const dayName = dayNames[date.getDay()];
+      
+      const dayAttendance = weeklyAttendance.filter(record => {
+        const recordDate = record.date.toISOString().split('T')[0];
+        const targetDate = date.toISOString().split('T')[0];
+        return recordDate === targetDate;
+      });
+
+      const present = dayAttendance.filter(record => record.status === "present").length;
+      const total = dayAttendance.length;
+      const rate = total > 0 ? (present / total) * 100 : 0;
+
+      weeklyAttendanceByDay.unshift({
+        day: dayName,
+        rate: Math.round(rate * 10) / 10
+      });
+    }
+
+    // Calculate activity completion rate
+    const completedActivities = await Activity.countDocuments({
+      teacherId: req.user._id,
+      status: "completed",
+      isActive: true,
+    });
+    const totalActivities = await Activity.countDocuments({
       teacherId: req.user._id,
       isActive: true,
-    })
-      .populate("childrenInvolved", "firstName lastName")
-      .populate("teacherId", "firstName lastName")
-      .sort({ startTime: -1 })
-      .limit(5);
+    });
+    const activityCompletionRate = totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0;
 
     res.json({
       status: "success",
-      message: "Dashboard stats retrieved successfully",
+      message: "Dashboard statistics retrieved successfully",
       data: {
         totalChildren,
-        presentChildren,
-        absentChildren: totalChildren - presentChildren,
-        todayActivities: todayActivities.length,
-        inProgressActivities: inProgressActivities.length,
-        upcomingActivities: upcomingActivities.length,
-        unreadNotifications,
-        attendanceRate: Math.round(attendanceRate * 100) / 100,
-        classAttendance: classAttendance.map(classData => ({
-          classId: classData._id,
-          className: classData.className,
-          totalChildren: classData.totalChildren,
-          present: classData.present,
-          absent: classData.absent,
-          rate: Math.round(classData.rate * 100) / 100,
-        })),
-        recentActivities: recentActivities.map(activity => ({
-          _id: activity._id,
-          title: activity.title,
-          description: activity.description,
-          startTime: activity.startTime,
-          endTime: activity.endTime,
-          status: activity.status,
-          type: activity.type,
-          childrenInvolved: activity.childrenInvolved,
-          teacherId: activity.teacherId,
-          centerId: activity.centerId,
-          location: activity.location,
-          materials: activity.materials,
-          notes: activity.notes,
-          updates: activity.updates,
-          createdAt: activity.createdAt,
-          updatedAt: activity.updatedAt,
-        })),
-        upcomingEvents: upcomingActivities.map(activity => ({
-          _id: activity._id,
-          title: activity.title,
-          description: activity.description,
-          startTime: activity.startTime,
-          endTime: activity.endTime,
-          status: activity.status,
-          type: activity.type,
-          childrenInvolved: activity.childrenInvolved,
-          teacherId: activity.teacherId,
-          centerId: activity.centerId,
-          location: activity.location,
-          materials: activity.materials,
-          notes: activity.notes,
-          updates: activity.updates,
-          createdAt: activity.createdAt,
-          updatedAt: activity.updatedAt,
-        })),
+        presentToday,
+        absentToday,
+        attendanceRate: Math.round(attendanceRate * 10) / 10,
+        activitiesCompleted: completedActivities,
+        activitiesInProgress: inProgressActivities.length,
+        activitiesScheduled: scheduledActivities.length,
+        unreadMessages,
+        weeklyAttendance: weeklyAttendanceByDay,
+        activityCompletionRate: Math.round(activityCompletionRate * 10) / 10
       },
     });
   })

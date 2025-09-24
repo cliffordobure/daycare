@@ -287,6 +287,97 @@ router.get(
   })
 );
 
+// @route   POST /api/communication/notifications
+// @desc    Send notification to parents
+// @access  Private (Teacher/Admin)
+router.post(
+  "/notifications",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    // Check if user is teacher or admin
+    if (!["teacher", "admin"].includes(req.user.role)) {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied. Teacher or admin privileges required.",
+      });
+    }
+
+    const { title, message, type, priority, childIds } = req.body;
+
+    // Validate required fields
+    if (!title || !message || !type) {
+      return res.status(400).json({
+        status: "error",
+        message: "Title, message, and type are required",
+      });
+    }
+
+    // Get parents of the specified children
+    let recipientIds = [];
+    if (childIds && childIds.length > 0) {
+      const children = await Child.find({
+        _id: { $in: childIds },
+        centerId: req.user.center,
+        isActive: true,
+      }).populate("parentId", "_id");
+
+      recipientIds = children.map(child => child.parentId._id);
+    } else {
+      // If no specific children, get all parents in the center
+      const children = await Child.find({
+        centerId: req.user.center,
+        isActive: true,
+      }).populate("parentId", "_id");
+
+      recipientIds = [...new Set(children.map(child => child.parentId._id))];
+    }
+
+    if (recipientIds.length === 0) {
+      return res.status(400).json({
+        status: "error",
+        message: "No valid recipients found",
+      });
+    }
+
+    // Create notifications for each recipient
+    const notifications = [];
+    for (const recipientId of recipientIds) {
+      const notification = new Notification({
+        title,
+        message,
+        type,
+        priority: priority || "medium",
+        recipientId,
+        senderId: req.user._id,
+        childIds: childIds || [],
+        createdBy: req.user._id,
+        updatedBy: req.user._id,
+      });
+
+      await notification.save();
+      notifications.push(notification);
+    }
+
+    res.status(201).json({
+      status: "success",
+      message: "Notification sent successfully",
+      data: {
+        _id: notifications[0]._id,
+        title: notifications[0].title,
+        message: notifications[0].message,
+        type: notifications[0].type,
+        priority: notifications[0].priority,
+        isRead: false,
+        senderId: notifications[0].senderId,
+        recipientIds,
+        childIds: childIds || [],
+        createdAt: notifications[0].createdAt,
+        updatedAt: notifications[0].updatedAt,
+      },
+    });
+  })
+);
+
 // @route   GET /api/communication/notifications
 // @desc    Get notifications
 // @access  Private
@@ -294,19 +385,15 @@ router.get(
   "/notifications",
   authenticateToken,
   asyncHandler(async (req, res) => {
-    const { type, isRead, limit = 50, offset = 0 } = req.query;
+    const { limit = 20, unread } = req.query;
 
     let query = {
       recipientId: req.user._id,
       isActive: true,
     };
 
-    if (type) {
-      query.type = type;
-    }
-
-    if (isRead !== undefined) {
-      query.isRead = isRead === "true";
+    if (unread !== undefined) {
+      query.isRead = unread === "true" ? false : true;
     }
 
     const notifications = await Notification.find(query)
@@ -314,8 +401,7 @@ router.get(
       .populate("childId", "firstName lastName")
       .populate("activityId", "title")
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .skip(parseInt(offset));
+      .limit(parseInt(limit));
 
     const totalNotifications = await Notification.countDocuments(query);
 
@@ -329,22 +415,15 @@ router.get(
         type: notification.type,
         priority: notification.priority,
         isRead: notification.isRead,
-        isSent: notification.isSent,
-        recipientId: notification.recipientId,
         senderId: notification.senderId?._id,
+        recipientId: notification.recipientId,
         childId: notification.childId?._id,
-        activityId: notification.activityId?._id,
-        attachments: notification.attachments,
-        metadata: notification.metadata,
-        scheduledAt: notification.scheduledAt,
-        sentAt: notification.sentAt,
-        readAt: notification.readAt,
         createdAt: notification.createdAt,
         updatedAt: notification.updatedAt,
       })),
       pagination: {
         total: totalNotifications,
-        page: Math.floor(parseInt(offset) / parseInt(limit)) + 1,
+        page: 1,
         limit: parseInt(limit),
         totalPages: Math.ceil(totalNotifications / parseInt(limit)),
       },

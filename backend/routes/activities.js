@@ -136,6 +136,84 @@ const validateActivityUpdateCreation = [
     .withMessage("Attachments must be an array"),
 ];
 
+// @route   GET /api/teacher/activities
+// @desc    Get activities for teacher
+// @access  Private
+router.get(
+  "/teacher/activities",
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    // Check if user is teacher
+    if (req.user.role !== "teacher") {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied. Teacher privileges required.",
+      });
+    }
+
+    const { startDate, endDate, page = 1, limit = 10 } = req.query;
+
+    // Validate required parameters
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        status: "error",
+        message: "startDate and endDate are required",
+      });
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const activities = await Activity.find({
+      teacherId: req.user._id,
+      startTime: { $gte: new Date(startDate), $lte: new Date(endDate) },
+      isActive: true,
+    })
+      .populate("childrenInvolved", "firstName lastName profilePicture")
+      .populate("teacherId", "firstName lastName profilePicture")
+      .sort({ startTime: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalActivities = await Activity.countDocuments({
+      teacherId: req.user._id,
+      startTime: { $gte: new Date(startDate), $lte: new Date(endDate) },
+      isActive: true,
+    });
+    const totalPages = Math.ceil(totalActivities / parseInt(limit));
+
+    res.json({
+      status: "success",
+      message: "Activities retrieved successfully",
+      data: {
+        activities: activities.map(activity => ({
+          _id: activity._id,
+          title: activity.title,
+          description: activity.description,
+          startTime: activity.startTime,
+          endTime: activity.endTime,
+          status: activity.status,
+          type: activity.type,
+          classId: activity.classId,
+          teacherId: activity.teacherId,
+          participants: activity.childrenInvolved.map(child => child._id),
+          materials: activity.materials,
+          notes: activity.notes,
+          photos: activity.photos.map(photo => photo.url),
+          createdAt: activity.createdAt,
+          updatedAt: activity.updatedAt,
+        })),
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalActivities,
+          hasNext: parseInt(page) < totalPages,
+          hasPrev: parseInt(page) > 1,
+        },
+      },
+    });
+  })
+);
+
 // @route   GET /api/activities
 // @desc    Get all activities with filtering and pagination
 // @access  Private
@@ -306,8 +384,8 @@ router.post(
       startTime,
       endTime,
       type,
-      childrenInvolved,
-      location,
+      classId,
+      participants,
       materials,
       notes,
     } = req.body;
@@ -321,13 +399,13 @@ router.post(
     }
 
     // Check if children belong to the same center
-    if (childrenInvolved && childrenInvolved.length > 0) {
+    if (participants && participants.length > 0) {
       const children = await Child.find({ 
-        _id: { $in: childrenInvolved },
+        _id: { $in: participants },
         centerId: req.user.center 
       });
       
-      if (children.length !== childrenInvolved.length) {
+      if (children.length !== participants.length) {
         return res.status(400).json({
           status: "error",
           message: "Some children do not belong to your center",
@@ -342,10 +420,9 @@ router.post(
       startTime,
       endTime,
       type,
-      childrenInvolved: childrenInvolved || [],
+      childrenInvolved: participants || [],
       teacherId: req.user._id,
       centerId: req.user.center,
-      location,
       materials: materials || [],
       notes,
       createdBy: req.user._id,
@@ -363,7 +440,21 @@ router.post(
       status: "success",
       message: "Activity created successfully",
       data: {
-        activity: populatedActivity,
+        _id: populatedActivity._id,
+        title: populatedActivity.title,
+        description: populatedActivity.description,
+        startTime: populatedActivity.startTime,
+        endTime: populatedActivity.endTime,
+        status: populatedActivity.status,
+        type: populatedActivity.type,
+        classId: populatedActivity.classId,
+        teacherId: populatedActivity.teacherId._id,
+        participants: populatedActivity.childrenInvolved.map(child => child._id),
+        materials: populatedActivity.materials,
+        notes: populatedActivity.notes,
+        photos: [],
+        createdAt: populatedActivity.createdAt,
+        updatedAt: populatedActivity.updatedAt,
       },
     });
   })
@@ -436,7 +527,21 @@ router.put(
       status: "success",
       message: "Activity updated successfully",
       data: {
-        activity: updatedActivity,
+        _id: updatedActivity._id,
+        title: updatedActivity.title,
+        description: updatedActivity.description,
+        startTime: updatedActivity.startTime,
+        endTime: updatedActivity.endTime,
+        status: updatedActivity.status,
+        type: updatedActivity.type,
+        classId: updatedActivity.classId,
+        teacherId: updatedActivity.teacherId._id,
+        participants: updatedActivity.childrenInvolved.map(child => child._id),
+        materials: updatedActivity.materials,
+        notes: updatedActivity.notes,
+        photos: updatedActivity.photos.map(photo => photo.url),
+        createdAt: updatedActivity.createdAt,
+        updatedAt: updatedActivity.updatedAt,
       },
     });
   })

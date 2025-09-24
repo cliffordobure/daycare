@@ -173,43 +173,56 @@ router.get(
       });
     }
 
-    const { classId, date } = req.query;
-    let query = { 
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const children = await Child.find({ 
       centerId: req.user.center,
       isActive: true 
-    };
-
-    if (classId) {
-      query.currentClass = classId;
-    }
-
-    const children = await Child.find(query)
+    })
       .populate("parentId", "firstName lastName email phone")
       .populate("currentClass", "name")
-      .sort({ firstName: 1 });
+      .sort({ firstName: 1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const totalChildren = await Child.countDocuments({ 
+      centerId: req.user.center,
+      isActive: true 
+    });
+    const totalPages = Math.ceil(totalChildren / parseInt(limit));
 
     res.json({
       status: "success",
       message: "Children retrieved successfully",
-      data: children.map(child => ({
-        _id: child._id,
-        firstName: child.firstName,
-        lastName: child.lastName,
-        age: child.age,
-        parentId: child.parentId,
-        centerId: child.centerId,
-        profilePicture: child.profilePicture,
-        isPresent: child.isPresent,
-        lastActivity: child.lastActivity,
-        lastUpdate: child.lastUpdate,
-        dateOfBirth: child.dateOfBirth,
-        gender: child.gender,
-        allergies: child.health?.allergies?.map(a => a.allergen).join(", ") || "",
-        medicalNotes: child.health?.medicalConditions?.map(m => m.condition).join(", ") || "",
-        emergencyContact: child.emergencyContacts?.find(ec => ec.isPrimary) || child.emergencyContacts?.[0] || {},
-        createdAt: child.createdAt,
-        updatedAt: child.updatedAt,
-      })),
+      data: {
+        children: children.map(child => ({
+          _id: child._id,
+          firstName: child.firstName,
+          lastName: child.lastName,
+          age: child.age,
+          parentId: child.parentId,
+          centerId: child.centerId,
+          profilePicture: child.profilePicture,
+          isPresent: child.isPresent,
+          lastActivity: child.lastActivity,
+          lastUpdate: child.lastUpdate,
+          dateOfBirth: child.dateOfBirth,
+          gender: child.gender,
+          allergies: child.health?.allergies?.map(a => a.allergen).join(", ") || "",
+          medicalNotes: child.health?.medicalConditions?.map(m => m.condition).join(", ") || "",
+          emergencyContact: child.emergencyContacts?.find(ec => ec.isPrimary) || child.emergencyContacts?.[0] || {},
+          createdAt: child.createdAt,
+          updatedAt: child.updatedAt,
+        })),
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalChildren,
+          hasNext: parseInt(page) < totalPages,
+          hasPrev: parseInt(page) > 1,
+        },
+      },
     });
   })
 );
